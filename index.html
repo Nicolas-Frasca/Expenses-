@@ -1,117 +1,153 @@
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wallet Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Finance Dashboard</title>
+    <!-- Chart.js per i grafici -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font moderno (Inter/Roboto) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
     <style>
         :root {
-            --bg-color: #f2f2f7;
-            --card-bg: #ffffff;
-            --primary: #007aff;
-            --danger: #ff3b30;
-            --success: #34c759;
-            --text-primary: #000000;
+            --bg-color: #000000;
+            --card-bg: #1c1c1e;
+            --primary: #0a84ff;
+            --success: #30d158;
+            --danger: #ff453a;
+            --text-primary: #ffffff;
             --text-secondary: #8e8e93;
+            --border: #2c2c2e;
         }
 
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             background-color: var(--bg-color);
+            color: var(--text-primary);
             margin: 0;
             padding: 20px;
             display: flex;
             justify-content: center;
-            color: var(--text-primary);
         }
 
-        .app-container {
+        .dashboard {
             width: 100%;
-            max-width: 480px;
+            max-width: 600px;
         }
 
         /* --- Header & Saldo --- */
         header {
+            margin-bottom: 25px;
             text-align: center;
-            margin-bottom: 30px;
         }
 
-        .balance-label {
-            font-size: 14px;
+        .subtitle {
+            font-size: 13px;
             color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+            margin-bottom: 5px;
         }
 
-        .balance-amount {
-            font-size: 42px;
+        .total-balance {
+            font-size: 48px;
             font-weight: 700;
-            margin: 5px 0;
+            letter-spacing: -1px;
+            margin: 0;
+            background: -webkit-linear-gradient(90deg, #fff, #a1a1a6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .balance-amount.positive { color: var(--success); }
-        .balance-amount.negative { color: var(--danger); }
-
-        /* --- Card Stile --- */
+        /* --- Card Containers --- */
         .card {
             background: var(--card-bg);
-            border-radius: 16px;
+            border-radius: 20px;
             padding: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
             margin-bottom: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* --- Grafico --- */
+        .chart-wrapper {
+            position: relative;
+            height: 220px;
+            width: 100%;
         }
 
         /* --- Form --- */
         .input-group {
             display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
+            flex-direction: column;
+            gap: 12px;
         }
 
-        input, select {
-            padding: 15px;
-            border: 1px solid #e5e5ea;
+        .row { display: flex; gap: 10px; }
+        
+        input, select, button {
+            background: #2c2c2e;
+            border: 1px solid transparent;
+            color: white;
+            padding: 14px;
             border-radius: 12px;
-            font-size: 17px;
+            font-size: 16px;
+            font-family: inherit;
             outline: none;
-            background: #f9f9f9;
             transition: all 0.2s;
         }
 
         input:focus, select:focus {
-            background: #fff;
             border-color: var(--primary);
+            background: #3a3a3c;
         }
 
-        .type-select {
-            width: 100%;
-            margin-bottom: 15px;
-            cursor: pointer;
+        /* Data Input Styling */
+        input[type="date"] {
+            color-scheme: dark;
         }
 
-        #description { flex: 2; }
-        #amount { flex: 1; }
-
-        button {
-            width: 100%;
-            padding: 16px;
-            background-color: var(--primary);
-            color: white;
-            border: none;
+        .type-selector {
+            display: flex;
+            background: #2c2c2e;
             border-radius: 12px;
-            font-size: 17px;
+            padding: 4px;
+            margin-bottom: 10px;
+        }
+
+        .type-option {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border-radius: 9px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
+            transition: all 0.3s;
+            color: var(--text-secondary);
         }
 
-        button:active { opacity: 0.8; transform: scale(0.98); }
+        .type-option.active.income { background: rgba(48, 209, 88, 0.2); color: var(--success); }
+        .type-option.active.expense { background: rgba(255, 69, 58, 0.2); color: var(--danger); }
 
-        /* --- Lista --- */
-        h3 {
-            margin: 0 0 15px 10px;
+        button.submit-btn {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+        button.submit-btn:active { transform: scale(0.98); opacity: 0.9; }
+
+        /* --- Lista Movimenti --- */
+        .section-title {
             font-size: 18px;
-            color: var(--text-secondary);
+            font-weight: 700;
+            margin: 0 0 15px 5px;
         }
 
         .transaction-list {
@@ -120,21 +156,20 @@
             margin: 0;
         }
 
-        .transaction-item {
+        .t-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 16px 0;
+            border-bottom: 1px solid #2c2c2e;
         }
+        .t-item:last-child { border-bottom: none; }
 
-        .transaction-item:last-child { border-bottom: none; }
-
-        .t-info { display: flex; flex-direction: column; }
+        .t-left { display: flex; flex-direction: column; gap: 4px; }
         .t-desc { font-weight: 500; font-size: 16px; }
-        .t-date { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+        .t-date { font-size: 12px; color: var(--text-secondary); }
 
-        .t-amount { font-weight: 600; font-size: 16px; }
+        .t-amount { font-weight: 600; font-size: 16px; letter-spacing: 0.5px; }
         .plus { color: var(--success); }
         .minus { color: var(--danger); }
 
@@ -142,132 +177,236 @@
 </head>
 <body>
 
-    <div class="app-container">
+    <div class="dashboard">
         
+        <!-- Header -->
         <header>
-            <div class="balance-label">Saldo Attuale</div>
-            <div id="totalBalance" class="balance-amount">€0.00</div>
+            <div class="subtitle">Saldo Attuale</div>
+            <h1 id="totalBalance" class="total-balance">€0.00</h1>
         </header>
 
+        <!-- Grafico Andamento -->
         <div class="card">
-            <select id="type" class="type-select">
-                <option value="expense">🔴 Uscita (Spesa)</option>
-                <option value="income">🟢 Entrata (Guadagno)</option>
-            </select>
+            <div class="chart-wrapper">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
 
-            <div class="input-group">
-                <input type="text" id="description" placeholder="Descrizione" required autocomplete="off">
-                <input type="number" id="amount" placeholder="€" step="0.01" required>
+        <!-- Form di Inserimento -->
+        <div class="card">
+            <!-- Selettore Tipo -->
+            <div class="type-selector">
+                <div id="btnExpense" class="type-option active expense" onclick="setType('expense')">Uscita</div>
+                <div id="btnIncome" class="type-option" onclick="setType('income')">Entrata</div>
             </div>
 
-            <button onclick="addTransaction()" id="submitBtn">Aggiungi</button>
+            <div class="input-group">
+                <input type="text" id="desc" placeholder="Descrizione (es. Netflix)" autocomplete="off">
+                <div class="row">
+                    <input type="number" id="amount" placeholder="€0.00" step="0.01" style="flex:1">
+                    <input type="date" id="date" style="flex:1">
+                </div>
+                <button class="submit-btn" onclick="addTransaction()" id="submitBtn">Aggiungi Transazione</button>
+            </div>
         </div>
 
-        <h3>Ultimi Movimenti</h3>
-        <div class="card" style="padding: 0;">
-            <ul id="list" class="transaction-list">
-                <li style="padding: 20px; text-align: center; color: #999;">Caricamento...</li>
-            </ul>
+        <!-- Lista Transazioni -->
+        <div>
+            <div class="section-title">Cronologia</div>
+            <div class="card" style="padding: 10px 20px;">
+                <ul id="list" class="transaction-list">
+                    <li style="padding:20px; text-align:center; color:#555">Caricamento dati...</li>
+                </ul>
+            </div>
         </div>
+
     </div>
 
     <script>
-        const balanceEl = document.getElementById('totalBalance');
-        const listEl = document.getElementById('list');
-        const submitBtn = document.getElementById('submitBtn');
+        let currentType = 'expense';
+        let chartInstance = null;
 
-        // 1. Carica dati (GET)
+        // Imposta la data di oggi come default nel campo data
+        document.getElementById('date').valueAsDate = new Date();
+
+        function setType(type) {
+            currentType = type;
+            document.getElementById('btnExpense').className = `type-option ${type === 'expense' ? 'active expense' : ''}`;
+            document.getElementById('btnIncome').className = `type-option ${type === 'income' ? 'active income' : ''}`;
+        }
+
+        // 1. Carica i dati dal Server
         async function loadData() {
             try {
                 const res = await fetch('/api/expenses');
-                const data = await res.json();
-                render(data);
-            } catch (err) {
-                console.error(err);
-                listEl.innerHTML = '<li style="padding:20px; text-align:center">Errore connessione</li>';
-            }
+                const rawData = await res.json();
+                
+                // Ordiniamo i dati per data (dal più vecchio al più nuovo per il grafico)
+                const sortedData = rawData.sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+                renderApp(sortedData);
+            } catch (e) { console.error(e); }
         }
 
-        // 2. Disegna interfaccia
-        function render(items) {
+        // 2. Disegna l'App
+        function renderApp(items) {
+            const listEl = document.getElementById('list');
+            const balanceEl = document.getElementById('totalBalance');
+            
             listEl.innerHTML = '';
             let total = 0;
+            
+            // Per il grafico: array di date e array di saldi progressivi
+            let chartLabels = [];
+            let chartData = [];
+            let runningBalance = 0;
 
-            if (items.length === 0) {
-                listEl.innerHTML = '<li style="padding:20px; text-align:center; color:#ccc">Nessun movimento</li>';
-                balanceEl.innerText = '€0.00';
+            // Creiamo i dati per il grafico e il totale
+            items.forEach(item => {
+                const val = parseFloat(item.amount);
+                runningBalance += val;
+                
+                // Formattiamo la data per il grafico
+                const dateObj = new Date(item.date);
+                const shortDate = dateObj.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
+                
+                chartLabels.push(shortDate);
+                chartData.push(runningBalance);
+                
+                total = runningBalance; // Il totale finale è l'ultimo saldo
+            });
+
+            // Aggiorna Saldo Visivo
+            balanceEl.innerText = `€${total.toFixed(2)}`;
+
+            // Aggiorna Grafico
+            updateChart(chartLabels, chartData);
+
+            // Disegna Lista (Invertita: dal più nuovo al più vecchio)
+            if(items.length === 0) {
+                listEl.innerHTML = '<li style="padding:20px; text-align:center; color:#555">Nessun movimento</li>';
                 return;
             }
 
-            // Calcola totale e disegna lista
-            // Usiamo slice().reverse() per vedere i più recenti in alto
-            items.slice().reverse().forEach(item => {
+            // Clono e inverto per la lista (voglio vedere prima le ultime spese)
+            [...items].reverse().forEach(item => {
                 const val = parseFloat(item.amount);
-                total += val;
-
                 const li = document.createElement('li');
-                li.className = 'transaction-item';
+                li.className = 't-item';
                 
-                // Formattazione data semplice
                 const dateObj = new Date(item.date);
-                const dateStr = dateObj.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+                const dateStr = dateObj.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
 
                 li.innerHTML = `
-                    <div class="t-info">
+                    <div class="t-left">
                         <span class="t-desc">${item.description}</span>
                         <span class="t-date">${dateStr}</span>
                     </div>
                     <span class="t-amount ${val >= 0 ? 'plus' : 'minus'}">
-                        ${val >= 0 ? '+' : ''}€${val.toFixed(2)}
+                        ${val > 0 ? '+' : ''}€${Math.abs(val).toFixed(2)}
                     </span>
                 `;
                 listEl.appendChild(li);
             });
-
-            // Aggiorna il saldo in alto
-            balanceEl.innerText = `€${total.toFixed(2)}`;
-            balanceEl.className = `balance-amount ${total >= 0 ? 'positive' : 'negative'}`;
         }
 
-        // 3. Aggiungi movimento (POST)
+        // 3. Gestione Grafico (Chart.js)
+        function updateChart(labels, dataPoints) {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            
+            // Gradiente per la linea
+            let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(10, 132, 255, 0.5)');
+            gradient.addColorStop(1, 'rgba(10, 132, 255, 0)');
+
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Saldo',
+                        data: dataPoints,
+                        borderColor: '#0a84ff',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        pointRadius: 0, // Nasconde i pallini per un look pulito
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.4 // Linea curva morbida
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }, // Nasconde la legenda
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#1c1c1e',
+                            titleColor: '#8e8e93',
+                            bodyColor: '#fff',
+                            borderColor: '#333',
+                            borderWidth: 1
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false, drawBorder: false },
+                            ticks: { color: '#555', maxTicksLimit: 6 }
+                        },
+                        y: {
+                            grid: { color: '#2c2c2e', drawBorder: false },
+                            ticks: { color: '#555', callback: (val) => '€' + val }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            });
+        }
+
+        // 4. Aggiungi Transazione
         async function addTransaction() {
-            const descIn = document.getElementById('description');
+            const descIn = document.getElementById('desc');
             const amountIn = document.getElementById('amount');
-            const typeIn = document.getElementById('type');
+            const dateIn = document.getElementById('date');
+            const btn = document.getElementById('submitBtn');
 
-            if(!descIn.value || !amountIn.value) return alert("Inserisci i dati!");
+            if(!descIn.value || !amountIn.value || !dateIn.value) return alert("Compila tutti i campi!");
 
-            submitBtn.disabled = true;
-            submitBtn.innerText = "Salvataggio...";
+            btn.disabled = true;
+            btn.innerText = "Salvataggio...";
 
-            // Logica: Se è "expense", rendiamo il numero negativo
             let finalAmount = parseFloat(amountIn.value);
-            if (typeIn.value === 'expense') {
-                finalAmount = -Math.abs(finalAmount); // Forza negativo
-            } else {
-                finalAmount = Math.abs(finalAmount); // Forza positivo
-            }
+            // Se è una spesa, invertiamo il segno
+            if(currentType === 'expense') finalAmount = -Math.abs(finalAmount);
+            else finalAmount = Math.abs(finalAmount);
 
             await fetch('/api/expenses', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     description: descIn.value,
-                    amount: finalAmount
+                    amount: finalAmount,
+                    date: dateIn.value // Inviamo la data scelta
                 })
             });
 
-            // Reset
             descIn.value = '';
             amountIn.value = '';
-            submitBtn.disabled = false;
-            submitBtn.innerText = "Aggiungi";
+            // Non resettiamo la data per comodità
+            btn.disabled = false;
+            btn.innerText = "Aggiungi Transazione";
             
-            // Ricarica
             loadData();
         }
 
-        // Avvio
         loadData();
     </script>
 </body>
