@@ -1,1 +1,208 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Spese</title>
+    <style>
+        /* --- CSS (Stile) --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            padding-top: 50px;
+            margin: 0;
+        }
 
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Form Styling */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #0070f3; /* Vercel Blue */
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #0051a2;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* List Styling */
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            background: #fff;
+            border-bottom: 1px solid #eee;
+            padding: 15px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        li:last-child {
+            border-bottom: none;
+        }
+
+        .expense-desc {
+            font-weight: 500;
+            color: #444;
+        }
+
+        .expense-amount {
+            font-weight: bold;
+            color: #e00; /* Rosso per le uscite */
+        }
+        
+        .empty-message {
+            text-align: center;
+            color: #888;
+            font-style: italic;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>💸 Le mie Spese</h1>
+
+        <form id="expenseForm" class="form-group">
+            <input type="text" id="description" placeholder="Descrizione (es. Pizza)" required autocomplete="off">
+            <input type="number" id="amount" placeholder="Importo (€)" step="0.01" required>
+            <button type="submit" id="submitBtn">Aggiungi Spesa</button>
+        </form>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+        <ul id="expenseList">
+            <div class="empty-message">Caricamento in corso...</div>
+        </ul>
+    </div>
+
+    <script>
+        /* --- JAVASCRIPT (Logica) --- */
+        const form = document.getElementById('expenseForm');
+        const list = document.getElementById('expenseList');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // 1. Funzione per caricare le spese (GET)
+        async function loadExpenses() {
+            try {
+                const response = await fetch('/api/expenses');
+                const expenses = await response.json();
+
+                renderList(expenses);
+            } catch (error) {
+                console.error('Errore:', error);
+                list.innerHTML = '<div class="empty-message">Errore nel caricamento dei dati.</div>';
+            }
+        }
+
+        // 2. Funzione per disegnare la lista a schermo
+        function renderList(expenses) {
+            list.innerHTML = ''; // Pulisce la lista attuale
+
+            if (expenses.length === 0) {
+                list.innerHTML = '<div class="empty-message">Nessuna spesa registrata.</div>';
+                return;
+            }
+
+            // Invertiamo l'array per vedere le ultime aggiunte in alto
+            expenses.slice().reverse().forEach(expense => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span class="expense-desc">${expense.description}</span>
+                    <span class="expense-amount">- €${parseFloat(expense.amount).toFixed(2)}</span>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        // 3. Funzione per aggiungere una spesa (POST)
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Evita il ricaricamento della pagina classica
+
+            const descInput = document.getElementById('description');
+            const amountInput = document.getElementById('amount');
+
+            const description = descInput.value;
+            const amount = parseFloat(amountInput.value);
+
+            // Disabilita il bottone mentre carica
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Aggiunta...';
+
+            try {
+                const response = await fetch('/api/expenses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ description, amount })
+                });
+
+                if (response.ok) {
+                    // Pulisci i campi
+                    descInput.value = '';
+                    amountInput.value = '';
+                    // Ricarica la lista per mostrare il nuovo elemento
+                    loadExpenses();
+                } else {
+                    alert("Errore nell'aggiunta della spesa");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Errore di connessione");
+            } finally {
+                // Riabilita il bottone
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Aggiungi Spesa';
+            }
+        });
+
+        // Avvia il caricamento appena si apre la pagina
+        loadExpenses();
+    </script>
+</body>
+</html>
